@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_selection import mutual_info_regression
 
-
+#### commit commit
 
 df = pd.read_csv("C:/Users/itayp/PycharmProjects/housing prices Kaggle/housing prices train DF_clean.csv")
 
