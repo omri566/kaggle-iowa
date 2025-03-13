@@ -1,8 +1,13 @@
 import pandas as pd
 pd.set_option('display.max_columns', None) # allows to see all of the columns of a pandas output works similarly for rows
 # Embedded JSON mappings (from category_analysis.json and num_analysis.json)
-df = pd.read_csv("C:/Users/itayp/OneDrive/Documents/Kaggle/hosuing price competition/housing prices train DF.csv")
 
+import os
+
+train_data_path = "train.csv"
+df = pd.read_csv(train_data_path)
+
+#map of each catagorical column with it's preproccesing recomendation
 CATEGORY_MAPPING = {
     "LotConfig": {"action": "one-hot","certainty": "sure","comment": "LotConfig has no clear ranking, so we apply one-hot encoding."},
     "MSZoning": {"action": "one-hot", "certainty": "probably", "comment": "No nulls, most values are low and medium density"},
@@ -49,6 +54,8 @@ CATEGORY_MAPPING = {
 
 
 }
+
+#each numerical column with it's preprocsessing
 NUMERIC_MAPPING = {
     "Id": {
         "action": "keep_as_is",
@@ -200,6 +207,7 @@ NUMERIC_MAPPING = {
         "comment": "No nulls, well distributed, **note** was moved here from the cat mapping after altering the "
                    "values into the mean of the neighborhood saleprice"},
 }
+
 # a mapping for all the ordinal features
 ordinal_mappings = {
     "ExterCond": {"Po": 1, "Fa": 2, "TA": 3, "Gd": 4, "Ex": 5},
@@ -404,9 +412,8 @@ def preprocess_housing_data(df):
     return df
 
 
-
 test1 = preprocess_housing_data(df)
-#print(test1.isna().sum().sum())
+
 test1.to_csv("C:/Users/itayp/OneDrive/Documents/housing prices train DF_clean.csv", index=False)
 #print(test1["PoolQC"].value_counts())
 #print(test1.describe(include="all").transpose())
