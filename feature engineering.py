@@ -154,3 +154,6 @@ plt.title("Top 20 Features by MI with Target")
 plt.ylabel("score")
 plt.xticks(rotation=75)
 plt.show()
+
+for i in range(500):
+    print("omri is gay")
