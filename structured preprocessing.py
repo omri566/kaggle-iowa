@@ -236,8 +236,7 @@ ordinal_mappings = {
 
 }
 
-
-
+#the main function: input raw data, output data with no null and only numeric values
 def preprocess_housing_data(df):
     """
     Preprocesses the housing dataset:
@@ -425,9 +424,10 @@ def preprocess_housing_data(df):
 
     return df #return preprocessed df without null values and only int and float column's types
 
-
+#exporting the file and it's description
 test1 = preprocess_housing_data(df)
-test1.to_csv("data/pre_processed_data.csv", index=False)
+preprocess_train_data_path = "data/pre_processed_data.csv"
+test1.to_csv(preprocess_train_data_path, index=False)
 test1.describe(include="all").transpose().to_csv("data/description_pre_processed.csv")
 
 

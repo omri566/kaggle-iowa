@@ -1,16 +1,22 @@
 import pandas as pd
 import numpy as np
+from seaborn import heatmap
 from sklearn.feature_selection import mutual_info_regression
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 #### commit commit
 
-df = pd.read_csv("C:/Users/itayp/PycharmProjects/housing prices Kaggle/housing prices train DF_clean.csv")
+preprocess_train_data_path = "data/pre_processed_data.csv"
+
+df = pd.read_csv(preprocess_train_data_path)
 
 # Split features & target variable
 X = df.drop(columns=["SalePrice"])
 y = df["SalePrice"]
 
-
+#checking mutual info and correlation to y for every attribute
 def analyze_feature_importance(X, y):
     """
     Computes correlation and mutual information between each feature and the target variable.
@@ -38,7 +44,9 @@ def analyze_feature_importance(X, y):
     feature_importance.sort_values(by="Mutual Information", ascending=False, inplace=True)
 
     return feature_importance
-print(analyze_feature_importance(X,y))
+
+feature_importance = analyze_feature_importance(X,y)
+feature_importance.to_csv("data/features_to_y_info.csv")
 # Example Usage:
 """
 feature_importance = analyze_feature_importance(X, y)
@@ -47,10 +55,7 @@ print(feature_importance)
 pd.reset_option("display.max_rows")  # Reset to default after printing
 """
 
-import matplotlib.pyplot as plt
-import pandas as pd
-from sklearn.feature_selection import mutual_info_regression
-
+# checking for every x to every x the correlation and mutual info
 def analyze_feature_dependencies(X, y, save_as_csv=True):
     """
     Computes and saves two matrices:
@@ -85,7 +90,6 @@ def analyze_feature_dependencies(X, y, save_as_csv=True):
 
 # Example Usage:
 #corr_matrix, mi_matrix = analyze_feature_dependencies(X, y)
-
 
 # Load the saved correlation and MI matrices
 corr_matrix = pd.read_csv("correlation_matrix.csv", index_col=0)
@@ -143,3 +147,10 @@ def find_highly_correlated_features(corr_matrix, threshold=0.8):
 #X["TotalLivableSF"] = X["TotalBsmtSF"] + X["1stFlrSF"] # fair correlation, higher than the two component's but not enough to make up for the loss of flexibility
 #X["GarageScore"] = (X["GarageQual"] + X["GarageCond"]) / 2 # low correlation
 
+
+plt.figure(figsize=(12, 6))
+feature_importance[["Correlation","Mutual Information"]].head(20).plot(kind="bar", color= ["royalblue", "firebrick"])  # Top 20
+plt.title("Top 20 Features by MI with Target")
+plt.ylabel("score")
+plt.xticks(rotation=75)
+plt.show()
