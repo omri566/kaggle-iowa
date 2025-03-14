@@ -4,7 +4,7 @@ pd.set_option('display.max_columns', None) # allows to see all of the columns of
 
 import os
 
-train_data_path = "train.csv"
+train_data_path = "data/train.csv"
 df = pd.read_csv(train_data_path)
 
 #map of each catagorical column with it's preproccesing recomendation
@@ -329,7 +329,7 @@ def preprocess_housing_data(df):
     df["Neighborhood"] = df["Neighborhood"].map(NEIGHBORHOOD_MEAN_PRICES)
 
     # Handle unseen neighborhoods (test set case)
-    df["Neighborhood"].fillna(OVERALL_TRAIN_MEAN, inplace=True)
+    df["Neighborhood"] = df["Neighborhood"].fillna(OVERALL_TRAIN_MEAN)
     # ***IMPORTANT*** AFTER THESE CHANGES THE FEATURE WAS NO LONGER A CATEGORICAL AND WAS MANUALLY CHANGED IN THE HARD CODE ABOVE
     #this difficult feature was divided into 3 different ones and than dropped
     # Map MSSubClass to Story_Count (Numerical - Ordinal)
@@ -400,31 +400,38 @@ def preprocess_housing_data(df):
 
     # Apply One-Hot Encoding
     df = pd.get_dummies(df, columns=ohe_features, dtype=float)
+
+
+
     #ordinals
     # Apply the mappings for ordinal features
+    #needed this messy loop beacaues pandas gonna remove the silent casting of the replace function so the
+    # line below was added to supprese the warrnings
+    pd.set_option('future.no_silent_downcasting', True)
+
     for feature, mapping in ordinal_mappings.items():
         if feature in df.columns:
-            df[feature] = df[feature].replace(mapping).infer_objects(copy=False)
+            # Perform replacement first
+            df[feature] = df[feature].replace(mapping)
 
+            # Determine correct type (int if all values are integers, else float)
+            dtype = pd.Series(mapping).dtype  # Get the dtype from mapping
 
+            # Convert the column explicitly to prevent FutureWarning
+            if dtype == 'int64' or dtype == 'int32':  # Ensure integer casting
+                df[feature] = df[feature].astype(int)
+            else:
+                df[feature] = df[feature].astype(float)  # Use float if necessary
 
-
-    return df
+    return df #return preprocessed df without null values and only int and float column's types
 
 
 test1 = preprocess_housing_data(df)
+test1.to_csv("data/pre_processed_data.csv", index=False)
+test1.describe(include="all").transpose().to_csv("data/description_pre_processed.csv")
 
-test1.to_csv("C:/Users/itayp/OneDrive/Documents/housing prices train DF_clean.csv", index=False)
-#print(test1["PoolQC"].value_counts())
-#print(test1.describe(include="all").transpose())
-# Get columns with object dtype
-object_columns = test1.select_dtypes(include=['object']).columns
 
-# Convert to list if needed
-object_columns_list = object_columns.tolist()
 
-print(object_columns_list)
-print(test1.head())
 
 
 """
