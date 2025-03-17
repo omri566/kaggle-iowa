@@ -13,7 +13,7 @@ CATEGORY_MAPPING = {
     "MSZoning": {"action": "one-hot", "certainty": "probably", "comment": "No nulls, most values are low and medium density"},
     "Street": {"action": "drop", "certainty": "sure", "comment": "Almost all values are 'Pave', likely drop"},
     "Alley": {"action": "drop", "certainty": "sure", "comment": "94% nulls, should drop"},
-    "LotShape": {"action": "one-hot", "certainty": "sure", "comment": "No nulls, might combine IR2 and IR3"},
+    "LotShape": {"action": "ordinal", "certainty": "sure", "comment": "No nulls, might combine IR2 and IR3"},
     "LandContour": {"action": "one-hot", "certainty": "maybe", "comment": "No nulls, over 80% in one category"},
     "Utilities": {"action": "drop", "certainty": "sure", "comment": "No nulls, 99% same category"},
     "Condition1": {"action": "drop", "certainty": "probably", "comment": "86% in a single category, not very interesting"},
@@ -232,7 +232,8 @@ ordinal_mappings = {
     "OverallQual": {i: i for i in range(1, 11)},  # 1-10 mapping
     "OverallCond": {i: i for i in range(1, 11)},  # 1-10 mapping
     "Age_Category": {"Newer": 2, "Mixed": 1, "Older": 0},
-    "GarageFinish": {"None": 0,"Unf": 1,"RFn": 2,"Fin": 3}
+    "GarageFinish": {"None": 0,"Unf": 1,"RFn": 2,"Fin": 3},
+    "LotShape": {"None" : 0,"IR3" : 1, "IR2" : 2, "IR1":3, "Reg":4 }
 
 }
 
