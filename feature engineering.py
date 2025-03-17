@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-#### commit commit
 
 preprocess_train_data_path = "data/pre_processed_data.csv"
 
@@ -89,11 +88,11 @@ def analyze_feature_dependencies(X, y, save_as_csv=True):
     return corr_matrix, mi_matrix
 
 # Example Usage:
-#corr_matrix, mi_matrix = analyze_feature_dependencies(X, y)
+#analyze_feature_dependencies(X, y)
 
 # Load the saved correlation and MI matrices
-corr_matrix = pd.read_csv("correlation_matrix.csv", index_col=0)
-mi_matrix = pd.read_csv("mutual_information_matrix.csv", index_col=0)
+#corr_matrix = pd.read_csv("correlation_matrix.csv", index_col=0)
+#mi_matrix = pd.read_csv("mutual_information_matrix.csv", index_col=0)
 
 
 def find_highly_correlated_features(corr_matrix, threshold=0.8):
