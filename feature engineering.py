@@ -46,7 +46,10 @@ def feature_enggeniring_pipeline(df):
     df = df .drop(columns = ["WoodDeckSF", "OpenPorchSF", "3SsnPorch", "ScreenPorch","EnclosedPorch"])
     #kitchen features were tested, number of kitchen was irrevent and transformations gave poor results, decided to drop
     df = df.drop(columns = ["KitchenAbvGr"])
-    #bsmt size quality product
+    #bsmt size quality product, BsmtGrade is from general basemnet features and BsmtUnitsGrade relates to different parts in it, they are similar in context and have 0.58 corr with each other
     df["BsmtUnitsGrade"] = df["BsmtFinSF1"] * df["BsmtFinType1"] + df["BsmtFinType2"] * df["BsmtFinSF2"]
     df["BsmtGrade"] = df["BsmtQual"] * df["TotalBsmtSF"] *df["BsmtQual"]
     df  = df.drop(columns = ['BsmtQual','BsmtExposure','BsmtCond','BsmtFinType1','BsmtFinType2',"TotalBsmtSF", "BsmtFinSF2","BsmtFinSF1","BsmtUnfSF"])
+    #room to size ratio, first chaging 0 rooms to 1, there are only 6 instances and 0 doesnt seem correct anyway
+    df["BedroomAbvGr"] = df["BedroomAbvGr"].replace({0: 1})
+    df["rooms_to_size"] = df["total_house_area"] / df["BedroomAbvGr"]

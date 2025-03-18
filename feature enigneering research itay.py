@@ -112,12 +112,11 @@ def feature_assessment(feature_input, label, full_df=working_df, sort_by='correl
 
 #total house area, adding the bsmt area and the non basement area
 #all the features below will be in the final pipeline
-#working_df["total_house_area"] = working_df["GrLivArea"] + working_df["TotalBsmtSF"]
+working_df["total_house_area"] = working_df["GrLivArea"] + working_df["TotalBsmtSF"]
 #print(feature_assessment(["total_house_area"],y))
 #working_df["qual*total_house_area"] = working_df["OverallQual"]*working_df["total_house_area"] #need to decide if not to stay as 2 different features
-#working_df["Garage_final"] = working_df["GarageFinish"]*working_df["GarageCars"]*working_df["GarageArea"] #GarageArea * GarageCars * GarageFinish
-#working_df["GarageYrBlt"] = working_df["GarageYrBlt"]
-#working_df["bathrooms_final"] = working_df["BsmtFullBath"] + working_df["FullBath"] + 0.5*(working_df["BsmtHalfBath"] + working_df["HalfBath"])
+working_df["Garage_final"] = working_df["GarageFinish"]*working_df["GarageCars"]*working_df["GarageArea"] #GarageArea * GarageCars * GarageFinish
+working_df["bathrooms_final"] = working_df["BsmtFullBath"] + working_df["FullBath"] + 0.5*(working_df["BsmtHalfBath"] + working_df["HalfBath"])
 #till here
 
 #working_df["lot_new"] = working_df["LotArea"]+working_df["LotFrontage"]
@@ -148,7 +147,24 @@ working_df["Kitchen quality product"] = working_df["KitchenAbvGr"]* working_df["
 working_df["bsmt product"] = working_df["BsmtQual"] * working_df["TotalBsmtSF"] *working_df["BsmtQual"]
 working_df["bsmt prod divided"] = (working_df["BsmtFinSF1"]*working_df["BsmtFinType1"] + working_df["BsmtFinType2"]*working_df["BsmtFinSF2"])
 #print(feature_assessment(['BsmtQual','BsmtExposure','BsmtCond','BsmtFinType1','BsmtFinType2',"TotalBsmtSF", "BsmtFinSF2","BsmtFinSF1","BsmtUnfSF","bsmt prod divided","bsmt product"],y))
+#ratios
 
+#what is the room to size ratio
+working_df["BedroomAbvGr"] = working_df["BedroomAbvGr"].replace({0: 1})
+working_df["rooms_to_size"] = working_df["total_house_area"]/(working_df["BedroomAbvGr"])
+#print(feature_assessment(["rooms_to_size","bathrooms_final","total_house_area","BedroomAbvGr"],y))
+
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+X_train, X_val, y_train, y_val = train_test_split(working_df, y, test_size=0.2, random_state=420)
+from xgboost import XGBRegressor
+
+model = XGBRegressor(n_estimators=100, random_state=420)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_val)
+rmse = np.sqrt(mean_squared_error(y_val, y_pred))
+print(f"Validation RMSE: {rmse:.2f}")
 
 
 
