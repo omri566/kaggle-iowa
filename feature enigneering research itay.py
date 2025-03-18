@@ -11,8 +11,8 @@ preprocess_train_data_path = "data/pre_processed_data.csv"
 mi_mat_path = "data/mutual_information_matrix.csv"
 #uploading files
 df = pd.read_csv(preprocess_train_data_path)
-corr_mat = pd.read_csv(corr_mat_path)
-mi_mat = pd.read_csv(mi_mat_path)
+corr_matrix = pd.read_csv(corr_mat_path)
+mi_matrix = pd.read_csv(mi_mat_path)
 # Split features & target variable
 X = df.drop(columns=["SalePrice"])
 y = df["SalePrice"]
@@ -114,29 +114,43 @@ def feature_assessment(feature_input, label, full_df=working_df, sort_by='correl
 
 #total house area, adding the bsmt area and the non basement area
 #all the features below will be in the final pipeline
-working_df["total_house_area"] = working_df["GrLivArea"] + working_df["TotalBsmtSF"]
-working_df["qual*total_house_area"] = working_df["OverallQual"]*working_df["total_house_area"] #need to decide if not to stay as 2 different features
-working_df["Garage_final"] = working_df["GarageFinish"]*working_df["GarageCars"]*working_df["GarageArea"] #GarageArea * GarageCars * GarageFinish
-working_df["GarageYrBlt"] = working_df["GarageYrBlt"]
-working_df["bathrooms_final"] = working_df["BsmtFullBath"] + working_df["FullBath"] + 0.5*(working_df["BsmtHalfBath"] + working_df["HalfBath"])
+#working_df["total_house_area"] = working_df["GrLivArea"] + working_df["TotalBsmtSF"]
+#print(feature_assessment(["total_house_area"],y))
+#working_df["qual*total_house_area"] = working_df["OverallQual"]*working_df["total_house_area"] #need to decide if not to stay as 2 different features
+#working_df["Garage_final"] = working_df["GarageFinish"]*working_df["GarageCars"]*working_df["GarageArea"] #GarageArea * GarageCars * GarageFinish
+#working_df["GarageYrBlt"] = working_df["GarageYrBlt"]
+#working_df["bathrooms_final"] = working_df["BsmtFullBath"] + working_df["FullBath"] + 0.5*(working_df["BsmtHalfBath"] + working_df["HalfBath"])
 #till here
 
-working_df["lot_new"] = working_df["LotArea"]+working_df["LotFron"]
-working_df["lot_new_2"] = working_df["LotFrontage"]/working_df["LotShape"]
+#working_df["lot_new"] = working_df["LotArea"]+working_df["LotFrontage"]
+#working_df["lot_new_2"] = working_df["LotFrontage"]/working_df["LotShape"]
 
-print(feature_assessment(["lot_new","LotFrontage","LotArea","LotShape","lot_new_2"],y))
+
 #below good way to do log feature
 #working_df["Garage_finish_size_2"] = working_df["Garage_finish_size_2"].apply(lambda x: np.log(x) if x > 0 else 0)
 
 
+#working_df["semi_built_area"] = working_df['WoodDeckSF'] + working_df['OpenPorchSF'] +  working_df["3SsnPorch"] + working_df["ScreenPorch"]
+#print(feature_assessment(["semi_built_area","WoodDeckSF", "OpenPorchSF", "3SsnPorch","ScreenPorch","EnclosedPorch" ],y))
+"""
 
+#fire place features
+working_df["fire_place_product"] = (working_df["Fireplaces"]+2) * (working_df["FireplaceQu"])
+print(working_df["Fireplaces"].value_counts())
+print(working_df["FireplaceQu"].value_counts())
+print(working_df["fire_place_product"].value_counts())
+print(feature_assessment(["Fireplaces","FireplaceQu","fire_place_product"],y))
+#kitchen features
+print(working_df["KitchenAbvGr"].value_counts())
+print(working_df["KitchenQual"].value_counts())
+working_df["Kitchen quality product"] = working_df["KitchenAbvGr"]* working_df["KitchenQual"]
+print(feature_assessment(["KitchenAbvGr","KitchenQual","Kitchen quality product"],y))
 
-
-
-
-
-
-
+#bsmt features
+working_df["bsmt product"] = working_df["BsmtQual"] * working_df["TotalBsmtSF"] *working_df["BsmtQual"]
+working_df["bsmt prod divided"] = (working_df["BsmtFinSF1"]*working_df["BsmtFinType1"] + working_df["BsmtFinType2"]*working_df["BsmtFinSF2"])
+print(feature_assessment(['BsmtQual','BsmtExposure','BsmtCond','BsmtFinType1','BsmtFinType2',"TotalBsmtSF", "BsmtFinSF2","BsmtFinSF1","BsmtUnfSF","bsmt prod divided","bsmt product"],y))
+"""
 
 
 

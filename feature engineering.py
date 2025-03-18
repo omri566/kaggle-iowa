@@ -30,7 +30,7 @@ def feature_enggeniring_pipeline(df):
     #Garage features
     df["Garage_final"] = (df["GarageFinish"] * df["GarageCars"] *
                           df["GarageArea"])  # GarageArea * GarageCars * GarageFinish
-    df = df.dtop(columns = ["GarageType","GarageFinish","GarageArea","GarageQual","GarageCars","GarageCond"])
+    df = df.drop(columns = ["GarageType","GarageFinish","GarageArea","GarageQual","GarageCars","GarageCond"])
 
 
     #size features
@@ -38,3 +38,15 @@ def feature_enggeniring_pipeline(df):
     df["qual*total_house_area"] = (df["OverallQual"] *
                                    df["total_house_area"])  # need to decide if not to stay as 2 different features
     df = df.drop(columns = ["GrLivArea", "TotalBsmtSF", "total_house_area"])
+    # garden built area, deck porch, pergula, etc combined into 1 feature and than dropped - note that enclosed porch was harming the relation to y in both parameters and therefore was simply dropped
+    df["semi_built_area"] = (df['WoodDeckSF'] +
+                             df['OpenPorchSF'] +
+                             df["3SsnPorch"] +
+                                df["ScreenPorch"])
+    df = df .drop(columns = ["WoodDeckSF", "OpenPorchSF", "3SsnPorch", "ScreenPorch","EnclosedPorch"])
+    #kitchen features were tested, number of kitchen was irrevent and transformations gave poor results, decided to drop
+    df = df.drop(columns = ["KitchenAbvGr"])
+    #bsmt size quality product
+    df["BsmtUnitsGrade"] = df["BsmtFinSF1"] * df["BsmtFinType1"] + df["BsmtFinType2"] * df["BsmtFinSF2"]
+    df["BsmtGrade"] = df["BsmtQual"] * df["TotalBsmtSF"] *df["BsmtQual"]
+    df  = df.drop(columns = ['BsmtQual','BsmtExposure','BsmtCond','BsmtFinType1','BsmtFinType2',"TotalBsmtSF", "BsmtFinSF2","BsmtFinSF1","BsmtUnfSF"])
