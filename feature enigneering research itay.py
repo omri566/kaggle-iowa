@@ -4,7 +4,7 @@ from seaborn import heatmap
 from sklearn.feature_selection import mutual_info_regression
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+import xgboost
 #paths
 corr_mat_path = "data/correlation_matrix.csv"
 preprocess_train_data_path = "data/pre_processed_data.csv"
@@ -22,10 +22,8 @@ working_df = X.copy()
 
 
 # creating an assesment function that will allow to test a new feature for corr and mi with the label
-import pandas as pd
-from sklearn.feature_selection import mutual_info_regression
 
-import pandas as pd
+
 from sklearn.feature_selection import mutual_info_regression
 
 
@@ -130,27 +128,26 @@ def feature_assessment(feature_input, label, full_df=working_df, sort_by='correl
 #working_df["Garage_finish_size_2"] = working_df["Garage_finish_size_2"].apply(lambda x: np.log(x) if x > 0 else 0)
 
 
-#working_df["semi_built_area"] = working_df['WoodDeckSF'] + working_df['OpenPorchSF'] +  working_df["3SsnPorch"] + working_df["ScreenPorch"]
+working_df["semi_built_area"] = working_df['WoodDeckSF'] + working_df['OpenPorchSF'] +  working_df["3SsnPorch"] + working_df["ScreenPorch"]
 #print(feature_assessment(["semi_built_area","WoodDeckSF", "OpenPorchSF", "3SsnPorch","ScreenPorch","EnclosedPorch" ],y))
-"""
+
 
 #fire place features
 working_df["fire_place_product"] = (working_df["Fireplaces"]+2) * (working_df["FireplaceQu"])
-print(working_df["Fireplaces"].value_counts())
-print(working_df["FireplaceQu"].value_counts())
-print(working_df["fire_place_product"].value_counts())
-print(feature_assessment(["Fireplaces","FireplaceQu","fire_place_product"],y))
+#print(working_df["Fireplaces"].value_counts())
+#print(working_df["FireplaceQu"].value_counts())
+#print(working_df["fire_place_product"].value_counts())
+#print(feature_assessment(["Fireplaces","FireplaceQu","fire_place_product"],y))
 #kitchen features
-print(working_df["KitchenAbvGr"].value_counts())
-print(working_df["KitchenQual"].value_counts())
+#print(working_df["KitchenAbvGr"].value_counts())
+#print(working_df["KitchenQual"].value_counts())
 working_df["Kitchen quality product"] = working_df["KitchenAbvGr"]* working_df["KitchenQual"]
-print(feature_assessment(["KitchenAbvGr","KitchenQual","Kitchen quality product"],y))
+#print(feature_assessment(["KitchenAbvGr","KitchenQual","Kitchen quality product"],y))
 
 #bsmt features
 working_df["bsmt product"] = working_df["BsmtQual"] * working_df["TotalBsmtSF"] *working_df["BsmtQual"]
 working_df["bsmt prod divided"] = (working_df["BsmtFinSF1"]*working_df["BsmtFinType1"] + working_df["BsmtFinType2"]*working_df["BsmtFinSF2"])
-print(feature_assessment(['BsmtQual','BsmtExposure','BsmtCond','BsmtFinType1','BsmtFinType2',"TotalBsmtSF", "BsmtFinSF2","BsmtFinSF1","BsmtUnfSF","bsmt prod divided","bsmt product"],y))
-"""
+#print(feature_assessment(['BsmtQual','BsmtExposure','BsmtCond','BsmtFinType1','BsmtFinType2',"TotalBsmtSF", "BsmtFinSF2","BsmtFinSF1","BsmtUnfSF","bsmt prod divided","bsmt product"],y))
 
 
 
@@ -288,6 +285,76 @@ def find_highly_correlated_features(corr_matrix, threshold=0.8):
 #print(drop_df.head())  # Show the first few rows of correlated features
 #X["TotalLivableSF"] = X["TotalBsmtSF"] + X["1stFlrSF"] # fair correlation, higher than the two component's but not enough to make up for the loss of flexibility
 #X["GarageScore"] = (X["GarageQual"] + X["GarageCond"]) / 2 # low correlation
+
+"""
+#no creating new features from this point if you want a SHAP check on them
+from xgboost import XGBRegressor
+from sklearn.model_selection import train_test_split
+# splitting the data to avoid potential data leakage
+X_train, X_val, y_train, y_val = train_test_split(working_df, y, test_size=0.2, random_state=42)
+
+model = XGBRegressor(n_estimators=100, random_state=420)
+model.fit(X_train, y_train)
+import shap
+
+explainer = shap.Explainer(model, X_train)
+shap_values = explainer(X_train)
+
+import shap
+import matplotlib.pyplot as plt
+
+"""
+def shap_feature_insight(feature_name, shap_values , X_df , color_feature=None, impact_thresholds=(0.01, 0.05)):
+    """
+    Generate SHAP dependence plot + guidance for a given feature.
+
+    Args:
+        feature_name (str): The feature to analyze.
+        shap_values: SHAP values from explainer.
+        X_df (DataFrame): DataFrame used to calculate SHAP values.
+        color_feature (str): Optional, feature name to color by.
+        impact_thresholds (tuple): (low, high) thresholds for guidance.
+
+    Returns:
+        Plot + printed guidance.
+    """
+
+    # Get index and SHAP values for feature
+    try:
+        feature_index = shap_values.feature_names.index(feature_name)
+    except ValueError:
+        print(f"Feature '{feature_name}' not found in SHAP values.")
+        return
+
+    shap_vals_feature = shap_values.values[:, feature_index]
+    feature_vals = X_df[feature_name]
+
+    # Plot
+    plt.figure(figsize=(8, 5))
+    if color_feature:
+        plt.scatter(feature_vals, shap_vals_feature, c=X_df[color_feature], cmap='coolwarm', alpha=0.7)
+        plt.colorbar(label=color_feature)
+    else:
+        plt.scatter(feature_vals, shap_vals_feature, alpha=0.7)
+
+    plt.xlabel(f"{feature_name} (Feature Value)")
+    plt.ylabel("SHAP Value (Impact on Predicted Price)")
+    plt.title(f"SHAP Impact of {feature_name}")
+    plt.show()
+
+    # Calculate impact score (mean absolute SHAP value)
+    impact_score = abs(shap_vals_feature).mean()
+    print(f"Average Impact (|SHAP|): {impact_score:.4f}")
+
+    # Provide guidance
+    low_thresh, high_thresh = impact_thresholds
+    if impact_score >= high_thresh:
+        print(f"🔹 Guidance: HIGH impact → Keep this feature. Consider interactions.")
+    elif impact_score >= low_thresh:
+        print(f"🟡 Guidance: MEDIUM impact → Test further. Try combinations.")
+    else:
+        print(f"🔻 Guidance: LOW impact → Consider dropping or revising.")
+
 
 
 
