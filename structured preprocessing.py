@@ -226,7 +226,7 @@ ordinal_mappings = {
     "Fence": {"None": 0, "MnPrv": 1, "GdPrv": 2, "MnWw": 3, "GdWo": 4},
     "HeatingQC": {"Po": 1, "Fa": 2, "TA": 3, "Gd": 4, "Ex": 5},
     "PavedDrive": {"N": 0, "Y": 1},  # ✅ Only Y/N after replacing "P" with "Y"
-    "CentralAir": {"N": 0, "Y": 1},
+    "Central`Air`": {"N": 0, "Y": 1},
     "Electrical": {"None":-1,"Mix": 0, "FuseP": 1, "FuseF": 2, "FuseA": 3, "SBrkr": 4},
     "LandSlope": {"Sev": 0, "Mod": 1, "Gtl": 2},
     "OverallQual": {i: i for i in range(1, 11)},  # 1-10 mapping
