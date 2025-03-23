@@ -5,11 +5,9 @@ import pandas as pd
 from sklearn.model_selection import cross_val_score, KFold, train_test_split
 import random
 from sklearn.metrics import mean_squared_error
-from scipy.stats import zscore
 
 # Load your preprocessed dataset
 df = pd.read_csv("data/feature_engineered_data.csv")
-df = df[(np.abs(zscore(df["SalePrice"])) < 3)]  # Keep only values within 3 standard deviations - **move this the the feature engineering file
 print(len(df))
 # Split features & target variable
 X = df.drop(columns=["SalePrice"])

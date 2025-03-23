@@ -1,7 +1,9 @@
 import pandas as pd
+from scipy.stats import zscore
+
 pd.set_option('display.max_columns', None) # allows to see all of the columns of a pandas output works similarly for rows
 # Embedded JSON mappings (from category_analysis.json and num_analysis.json)
-
+import numpy as np
 import os
 
 train_data_path = "data/train.csv"
@@ -257,6 +259,7 @@ def preprocess_housing_data(df):
     one_hot_features = [f for f, details in CATEGORY_MAPPING.items() if details.get("action") == "one-hot"]
     ordinal_features = [f for f, details in CATEGORY_MAPPING.items() if details.get("action") == "ordinal"]
     binary_features = [f for f, details in CATEGORY_MAPPING.items() if details.get("action") == "binary"]
+    df = df[(np.abs(zscore(df["SalePrice"])) < 3)]  # Keep only values within 3 standard deviations - **move this the the feature engineering file
 
     # Drop unnecessary features
 
