@@ -146,25 +146,26 @@ working_df["Kitchen quality product"] = working_df["KitchenAbvGr"]* working_df["
 #print(feature_assessment(["KitchenAbvGr","KitchenQual","Kitchen quality product"],y))
 
 #bsmt features
-working_df["bsmt product"] = working_df["BsmtQual"] * working_df["TotalBsmtSF"] *working_df["BsmtQual"]
+working_df["bsmt product"] =  working_df["TotalBsmtSF"] *working_df["BsmtQual"]
 working_df["bsmt prod divided"] = (working_df["BsmtFinSF1"]*working_df["BsmtFinType1"] + working_df["BsmtFinType2"]*working_df["BsmtFinSF2"])
 #print(feature_assessment(['BsmtQual','BsmtExposure','BsmtCond','BsmtFinType1','BsmtFinType2',"TotalBsmtSF", "BsmtFinSF2","BsmtFinSF1","BsmtUnfSF","bsmt prod divided","bsmt product"],y))
 #ratios
 
 #size to room ratio
 working_df["BedroomAbvGr"] = working_df["BedroomAbvGr"].replace({0: 1})
-working_df["rooms_to_size"] = working_df["total_house_area"]/(working_df["BedroomAbvGr"])
+working_df["rooms_to_size"] = working_df["GrLivArea"]/(working_df["BedroomAbvGr"])
 #print(feature_assessment(["rooms_to_size","bathrooms_final","total_house_area","BedroomAbvGr"],y))
 # house electic infrastructure, heating was dropped on preprocessing, for more check category_mapping json in the preprocess file
 elec_inf = ["HeatingQC", "CentralAir","Electrical",]
-#working_df["elec_inf"] = working_df["HeatingQC"] + 5*working_df["CentralAir"] + working_df["Electrical"]
+
+working_df["elec_inf"] = working_df["HeatingQC"] + working_df["CentralAir"] + working_df["Electrical"]
+working_df = working_df.drop(columns= ["CentralAir", "Electrical"])
+working_df["land_score"] = working_df["LandSlope"] + (4 - working_df["LotShape"]) + (4 - working_df["LandContour"])
+working_df["house_to_bsmt_ratio"] = np.log((working_df["TotalBsmtSF"]/working_df["total_house_area"]).replace({0:1}))
 #consider multiplying a/c by 5 to noramlize with the other two factors.
 #creates more corr but less MI and worst RMSE score
-print(feature_assessment(["HeatingQC", "CentralAir","Electrical"],y))
-working_df = working_df.drop(elec_inf, axis=1)
-
-
-
+#print(feature_assessment(["HeatingQC", "CentralAir","Electrical"],y))
+#print(feature_assessment(["house_to_bsmt_ratio"],y))
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
@@ -172,18 +173,17 @@ from sklearn.metrics import mean_squared_error
 X_train, X_val, y_train, y_val = train_test_split(working_df, y, test_size=0.2, random_state=420)
 from xgboost import XGBRegressor
 # dummy model creation for testing
-model = XGBRegressor(n_estimators=100, random_state=420)
+model = XGBRegressor(n_estimators=400, random_state=420, gamma=0.1, learning_rate=0.05, n_jobs=-1, max_depth = 6)
 model.fit(X_train, y_train)
 y_pred = model.predict(X_val)
 # checking RMSE
 rmse = np.sqrt(mean_squared_error(y_val, y_pred))
 print(f"Validation RMSE: {rmse:.2f}")
-
 # SHAP
 explainer = shap.Explainer(model, X_train)
 shap_values = explainer(X_train)
 
-def shap_feature_insight(feature_name, shap_values , X_df , color_feature=None, impact_thresholds=(0.01, 0.05)):
+def shap_feature_insight(feature_name, shap_values , X_df , color_feature=None, impact_thresholds=(1000, 3000)):
     """
     Generate SHAP dependence plot + guidance for a given feature.
 
@@ -233,7 +233,7 @@ def shap_feature_insight(feature_name, shap_values , X_df , color_feature=None, 
         print(f"🟡 Guidance: MEDIUM impact → Test further. Try combinations.")
     else:
         print(f"🔻 Guidance: LOW impact → Consider dropping or revising.")
-
+shap_feature_insight("MasVnrType", shap_values, X_df = X_train)
 
 
 

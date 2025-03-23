@@ -53,3 +53,9 @@ def feature_enggeniring_pipeline(df):
     #room to size ratio, first chaging 0 rooms to 1, there are only 6 instances and 0 doesnt seem correct anyway
     df["BedroomAbvGr"] = df["BedroomAbvGr"].replace({0: 1})
     df["rooms_to_size"] = df["total_house_area"] / df["BedroomAbvGr"]
+    #land cumulative score
+    df["elec_inf"] = df["HeatingQC"] + df["CentralAir"] + df["Electrical"]
+    #non basement area divided by none basement rooms, not including bathrooms
+    df["rooms_to_size"] = df["GrLivArea"] / (df["BedroomAbvGr"])
+    #total basement divided by total house(including bsmt) replaced zero with 1 for log purposes
+    df["house_to_bsmt_ratio"] = np.log((df["TotalBsmtSF"] / df["total_house_area"]).replace({0: 1}))
