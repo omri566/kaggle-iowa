@@ -4,12 +4,14 @@ from pyexpat import features
 import pandas as pd
 import numpy as np
 import shap
+from numba.core.typing.new_builtins import Print
 from seaborn import heatmap
 from sklearn.feature_selection import mutual_info_regression
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import mean_squared_error
 from xgboost import XGBRegressor
+import json
 
 
 
@@ -31,7 +33,7 @@ spec.loader.exec_module(feature_engineering)
 # Loading the data
 preprocess_train_data_path = "data/pre_processed_data.csv"
 dfcpy = pd.read_csv(preprocess_train_data_path)
-#df_rdy =  feature_engineering.feature_enggeniring_pipeline(dfcpy)
+#df_rdy =  feature_engineering.feature_enggeniring_pipeline(dfcpy) #this line for when the feature engineering will be complete
 X = dfcpy.drop(columns=["SalePrice"])
 y = dfcpy["SalePrice"]
 
@@ -42,6 +44,7 @@ kf = KFold(n_splits=5, random_state=420 , shuffle=True)
 
 #defineing the model
 xgb_model = XGBRegressor(random_state=420 , objective="reg:squarederror",eval_metric="rmse")
+
 
 #model parameters to iterate over
 param_grid = {
@@ -57,6 +60,12 @@ grid_search.fit(X_train,y_train)
 best_model = grid_search.best_estimator_
 best_parameters = grid_search.best_params_
 
+#save the best parameters in json file
+with open("data/first_xgb_param.json","w") as f:
+    json.dump(best_parameters,f,indent=4)
+print("Best parameters saved to best_xgb_params.json")
+
+
 #predict
 predictions = best_model.predict(X_test)
 #evaluation
@@ -71,3 +80,5 @@ shap_values = explainer(X_test)
 
 # Plot summary
 shap.summary_plot(shap_values, X_test)
+
+print("Hello world")

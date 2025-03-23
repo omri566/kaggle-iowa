@@ -1,26 +1,98 @@
+import json
 import xgboost as xgb
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import cross_val_score, KFold
+from sklearn.model_selection import cross_val_score, KFold, train_test_split
+import random
 from sklearn.metrics import mean_squared_error
 
 # Load your preprocessed dataset
-df = pd.read_csv("C:/Users/itayp/PycharmProjects/housing prices Kaggle/housing prices train DF_clean.csv")
+df = pd.read_csv("data/pre_processed_data.csv")
 
 # Split features & target variable
 X = df.drop(columns=["SalePrice"])
 y = df["SalePrice"]
+
+X_train, X_test , y_train , y_test = train_test_split(X,y , test_size=0.2, random_state=420)
+
 # Set up 5-fold Cross-Validation (since data < 1500 rows)
 kf = KFold(n_splits=5, shuffle=True, random_state=420)
 
+#function to generate random parameters to fine tune
+def get_random_params(base_params):
+    """
+    Generates a slightly modified version of the given hyperparameters.
+
+    - Increases/decreases integer parameters by ±20%.
+    - Adjusts float parameters by ±10-20%.
+
+    Parameters:
+    - base_params (dict): Original estimated parameters.
+
+    Returns:
+    - dict: Randomly adjusted parameters.
+    """
+    new_params = {}
+
+    for key, value in base_params.items():
+        if isinstance(value, int):  # Integer parameters (e.g., max_depth, n_estimators)
+            change = max(1, int(value * random.uniform(0.8, 1.2)))  # ±20%
+            new_params[key] = change
+
+        elif isinstance(value, float):  # Float parameters (e.g., learning_rate)
+            change = round(value * random.uniform(0.8, 1.2), 4)  # ±10-20%, rounded to 4 decimals
+            new_params[key] = change
+
+        else:
+            new_params[key] = value  # If it's something else, keep it unchanged
+
+    return new_params
+
+# Load parameters from JSON
+with open("data/best_xgb_params.json", "r") as f:
+    param_data = json.load(f)
+
+# Run fine-tuning trials
+
+#this functions get parmeters to tweek and num_trials and return the best parameters and save it to json
+def fine_tune(params,num_trials):
+    best_rmse = float("inf")
+    best_params = None
+
+    for i in range(num_trials):
+        #generating parameters and initializing the model
+        new_params = get_random_params(params)
+        model = xgb.XGBRegressor(random_state=42,objective="reg:squarederror",eval_metric="rmse", **new_params)
+
+        # Train model
+        model.fit(X_train, y_train)
+
+        # Evaluate model
+        predictions = model.predict(X_test)
+        rmse = np.sqrt(mean_squared_error(y_test, predictions))
+
+        print(f"Trial {i+1}: RMSE = {rmse}, Params = {new_params}")
+
+        # Save the best parameters
+        if rmse < best_rmse:
+            best_rmse = rmse
+            best_params = new_params
+
+    # Save the best fine-tuned parameters
+    with open("data/best_xgb_params.json", "w") as f:
+        json.dump(best_params, f, indent=4)
+
+    print(f"\nBest parameters saved to data/best_xgb_params.json with RMSE = {best_rmse}")
+    return best_params
+
+#best_params = fine_tune(param_data,20)
+with open("data/best_xgb_params.json","r") as f:
+    best_params = json.load(f)
 # Initialize XGBoost model with default parameters
 xgb_model = xgb.XGBRegressor(
     objective="reg:squarederror",
     random_state=420,
-    n_estimators=1000,
-    n_jobs = 4,
-    learning_rate = 0.05,
-    max_depth = 6
+    **best_params
 )
 
 # Perform Cross-Validation & Compute RMSE
