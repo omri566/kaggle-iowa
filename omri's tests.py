@@ -4,7 +4,6 @@ from pyexpat import features
 import pandas as pd
 import numpy as np
 import shap
-from numba.core.typing.new_builtins import Print
 from seaborn import heatmap
 from sklearn.feature_selection import mutual_info_regression
 import matplotlib.pyplot as plt
@@ -20,20 +19,9 @@ import importlib.util
 
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV
 
-# Define the path to the file
-file_path = "feature engineering.py"
-
-# Load the module dynamically
-spec = importlib.util.spec_from_file_location("feature_engineering", file_path)
-feature_engineering = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(feature_engineering)
-
-
-
 # Loading the data
-preprocess_train_data_path = "data/pre_processed_data.csv"
+preprocess_train_data_path = "data/feature_engineered_data.csv"
 dfcpy = pd.read_csv(preprocess_train_data_path)
-#df_rdy =  feature_engineering.feature_enggeniring_pipeline(dfcpy) #this line for when the feature engineering will be complete
 X = dfcpy.drop(columns=["SalePrice"])
 y = dfcpy["SalePrice"]
 

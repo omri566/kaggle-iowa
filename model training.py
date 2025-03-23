@@ -5,10 +5,12 @@ import pandas as pd
 from sklearn.model_selection import cross_val_score, KFold, train_test_split
 import random
 from sklearn.metrics import mean_squared_error
+from scipy.stats import zscore
 
 # Load your preprocessed dataset
-df = pd.read_csv("data/pre_processed_data.csv")
-
+df = pd.read_csv("data/feature_engineered_data.csv")
+df = df[(np.abs(zscore(df["SalePrice"])) < 3)]  # Keep only values within 3 standard deviations - **move this the the feature engineering file
+print(len(df))
 # Split features & target variable
 X = df.drop(columns=["SalePrice"])
 y = df["SalePrice"]
@@ -49,10 +51,8 @@ def get_random_params(base_params):
     return new_params
 
 # Load parameters from JSON
-with open("data/best_xgb_params.json", "r") as f:
-    param_data = json.load(f)
-
-# Run fine-tuning trials
+with open("data/first_xgb_param.json", "r") as f:
+    first_params = json.load(f)
 
 #this functions get parmeters to tweek and num_trials and return the best parameters and save it to json
 def fine_tune(params,num_trials):
@@ -85,20 +85,29 @@ def fine_tune(params,num_trials):
     print(f"\nBest parameters saved to data/best_xgb_params.json with RMSE = {best_rmse}")
     return best_params
 
-#best_params = fine_tune(param_data,20)
+#fine_tune(first_params,50)
+
 with open("data/best_xgb_params.json","r") as f:
     best_params = json.load(f)
+
+
 # Initialize XGBoost model with default parameters
 xgb_model = xgb.XGBRegressor(
     objective="reg:squarederror",
-    random_state=420,
+    random_state=400,
     **best_params
 )
 
+print(best_params)
+
 # Perform Cross-Validation & Compute RMSE
-cv_rmse = np.sqrt(-cross_val_score(xgb_model, X, y, cv=kf, scoring="neg_mean_squared_error"))
+cv_rmse = -cross_val_score(xgb.XGBRegressor(objective="reg:squarederror",random_state=400,**best_params),
+                           X, y, cv=5, scoring="neg_root_mean_squared_error")
+
+
 
 # Print Results
 print(f"Cross-Validation RMSE Scores: {cv_rmse}")
 print(f"Mean RMSE: {cv_rmse.mean():.4f}")
 print(f"Standard Deviation RMSE: {cv_rmse.std():.4f}")
+print("21361.6215 is the rmse of the pre data")
