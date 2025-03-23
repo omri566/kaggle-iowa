@@ -160,13 +160,12 @@ elec_inf = ["HeatingQC", "CentralAir","Electrical",]
 
 working_df["elec_inf"] = working_df["HeatingQC"] + working_df["CentralAir"] + working_df["Electrical"]
 working_df = working_df.drop(columns= ["CentralAir", "Electrical"])
-working_df["land_score"] = working_df["LandSlope"] + (4 - working_df["LotShape"]) + (4 - working_df["LandContour"])
+working_df["land_score"] = np.log((working_df["LandSlope"] + (4 - working_df["LotShape"]) + (4 - working_df["LandContour"]))*working_df["LotArea"])
 working_df["house_to_bsmt_ratio"] = np.log((working_df["TotalBsmtSF"]/working_df["total_house_area"]).replace({0:1}))
 #consider multiplying a/c by 5 to noramlize with the other two factors.
 #creates more corr but less MI and worst RMSE score
 #print(feature_assessment(["HeatingQC", "CentralAir","Electrical"],y))
 #print(feature_assessment(["house_to_bsmt_ratio"],y))
-
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
@@ -233,7 +232,7 @@ def shap_feature_insight(feature_name, shap_values , X_df , color_feature=None, 
         print(f"🟡 Guidance: MEDIUM impact → Test further. Try combinations.")
     else:
         print(f"🔻 Guidance: LOW impact → Consider dropping or revising.")
-shap_feature_insight("MasVnrType", shap_values, X_df = X_train)
+shap_feature_insight("land_score", shap_values, X_df = X_train)
 
 
 
