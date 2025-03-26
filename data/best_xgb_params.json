@@ -1,6 +1,6 @@
 {
     "gamma": 1,
-    "learning_rate": 0.0545,
-    "max_depth": 6,
-    "n_estimators": 300
+    "learning_rate": 0.093,
+    "max_depth": 3,
+    "n_estimators": 181
 }
