@@ -37,7 +37,7 @@ print(f"Standard Deviation RMSE: {cv_rmse.std():.4f}")
 
 param_grid = {
 }
-liner_reg = Linear
+liner_reg = Linears
 grid_search = GridSearchCV(rf_model, param_grid, cv=kf,scoring="neg_mean_squared_error",verbose=2,n_jobs=-1)
 grid_search.fit(X_train,y_train)
 best_model = grid_search.best_estimator_
