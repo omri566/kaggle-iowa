@@ -104,6 +104,9 @@ def feature_enggeniring_pipeline(df_input):
     df["land_score"] = np.log(
         (df["LandSlope"] + (4 - df["LotShape"]) + (4 - df["LandContour"])) * df["LotArea"])
     df = df.drop(columns= worst_43)
+    #used_features = ["LotShape","LandContour","BedroomAbvGr","BsmtFinType2","bsmtfin","3SsnPorch",]
+    #df = df.drop(columns=used_features,errors="ignore")
+    #exporting the df to data folder, ensuring smooth operation after changing the pipeline
     df.to_csv("feature_engineered_data.csv")
 
 def model_feature_diagnostics(model, X_df, y, sort_by="mean_abs_shap", ascending=False):
@@ -144,7 +147,7 @@ def model_feature_diagnostics(model, X_df, y, sort_by="mean_abs_shap", ascending
     return diagnostics_df
 
 feature_enggeniring_pipeline(pd.read_csv(preprocess_train_data_path))
-df = pd.read_csv("feature_engineered_data.csv")
+df = pd.read_csv("data/feature_engineered_data.csv")
 X_raw = df.drop(columns=['SalePrice'])
 y_raw = df['SalePrice']
 X_train, X_val, y_train, y_val = train_test_split(X_raw, y_raw, test_size=0.2, random_state=420)
