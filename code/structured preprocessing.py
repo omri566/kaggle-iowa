@@ -6,7 +6,14 @@ pd.set_option('display.max_columns', None) # allows to see all of the columns of
 import numpy as np
 import os
 
-train_data_path = "data/train.csv"
+# Get the absolute path of the current script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Go one level up to the project directory
+project_dir = os.path.dirname(script_dir)
+
+# Construct the path to the 'data' folder
+train_data_path = os.path.join(project_dir, "data", "train.csv")
 df = pd.read_csv(train_data_path)
 
 #map of each catagorical column with it's preproccesing recomendation
@@ -431,9 +438,10 @@ def preprocess_housing_data(df):
 
 #exporting the file and it's description
 test1 = preprocess_housing_data(df)
-preprocess_train_data_path = "data/pre_processed_data.csv"
-test1.to_csv(preprocess_train_data_path, index=False)
-test1.describe(include="all").transpose().to_csv("data/description_pre_processed.csv")
+data_path = os.path.join(project_dir, "data")
+
+test1.to_csv(data_path+"/pre_processed_data.csv", index=False)
+test1.describe(include="all").transpose().to_csv(data_path +"/description_pre_processed.csv")
 
 
 
