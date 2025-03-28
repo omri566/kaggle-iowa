@@ -1,11 +1,14 @@
 import json
 import os
+from math import gamma
+
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge, Lasso, ElasticNet
 from sklearn.model_selection import train_test_split, GridSearchCV, KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
+from xgboost import XGBRegressor
 
 # 📌 Paths
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -30,23 +33,32 @@ X_test_scaled = scaler.transform(X_test)
 y_train_log = np.log1p(y_train)  # log(1 + y)
 y_test_log = np.log1p(y_test)
 
-# 📌 Cross-validation strategy
-kf = KFold(n_splits=5, shuffle=True, random_state=420)
 
 # 📌 Evaluate Models using the log of y on Test Data
 def evaluate_log_model(model, model_name):
     y_pred_log = model.predict(X_test_scaled)  # Predictions in log scale
     y_pred = np.expm1(y_pred_log)  # Inverse transform to get real values
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    print(f"\n📌 True RMSE on Test Set for {model_name}: {rmse:.4f}")
 
 # 📌 Evaluate Models on Test Data
 def evaluate_model(model, model_name):
     y_pred = model.predict(X_test_scaled)  # Predictions in log scale
+    rmse = mean_squared_error(y_test,y_pred)
+    print(f"\n📌 True RMSE on Test Set for {model_name}: {rmse:.4f}")
 
 
+#train and test linear ridge model
+ridge_model = Ridge(alpha=1)
+ridge_model.fit(X_train_scaled,y_train_log)
+evaluate_log_model(ridge_model,"Ridge")
 
-
-
-
-
-linear_reg_model = Ridge(alpha="1")
+#train and test xgb model
+xgb_model = XGBRegressor(eval_metric="rmse",n_jobs=-1,random_state=420,objective="reg:squarederror",colsample_bytree=0.6, gamma=0,learning_rate=0.05,max_depth=5,n_estimators=500,reg_alpha=1, reg_lambda=10, subsample=0.6
+)
+xgb_model.fit(X_train,y_train)
+xgb_model_scaled = XGBRegressor(eval_metric="rmse",n_jobs=-1,random_state=420,objective="reg:squarederror",gamma=1,learning_rate=0.093,max_depth=3,n_estimators=181)
+xgb_model_scaled.fit(X_train_scaled,y_train_log)
+evaluate_model(xgb_model,"XGB")
+evaluate_log_model(xgb_model_scaled,"XGB_SCALED")
 

@@ -1,111 +1,87 @@
+import os
 import json
 import xgboost as xgb
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import cross_val_score, KFold, train_test_split
-import random
+from sklearn.model_selection import train_test_split, GridSearchCV, KFold
 from sklearn.metrics import mean_squared_error
 
-# Load your preprocessed dataset
-df = pd.read_csv("data/feature_engineered_data.csv")
-print(len(df))
-# Split features & target variable
+# 📌 Paths
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.dirname(script_dir)
+data_path = os.path.join(project_dir, "data", "feature_engineered_data.csv")
+best_param_file = os.path.join(project_dir, "data", "best_xgb_params.json")
+
+# 📌 Load dataset
+df = pd.read_csv(data_path)
+print(f"📌 Dataset size: {len(df)}")
+
+# 📌 Split features & target
 X = df.drop(columns=["SalePrice"])
 y = df["SalePrice"]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=420)
 
-X_train, X_test , y_train , y_test = train_test_split(X,y , test_size=0.2, random_state=420)
-
-# Set up 5-fold Cross-Validation (since data < 1500 rows)
+# 📌 Cross-validation strategy
 kf = KFold(n_splits=5, shuffle=True, random_state=420)
 
-#function to generate random parameters to fine tune
-def get_random_params(base_params):
-    """
-    Generates a slightly modified version of the given hyperparameters.
+# 📌 Define hyperparameter grid for tuning
+param_grid = {
+    'n_estimators': [100, 300, 500],
+    'max_depth': [3, 5, 7],
+    'learning_rate': [0.01, 0.05, 0.1],
+    'subsample': [0.6, 0.8, 1.0],
+    'colsample_bytree': [0.6, 0.8, 1.0],
+    'gamma': [0, 0.1, 0.2],
+    'reg_alpha': [0, 0.1, 1],
+    'reg_lambda': [1, 5, 10]
+}
 
-    - Increases/decreases integer parameters by ±20%.
-    - Adjusts float parameters by ±10-20%.
-
-    Parameters:
-    - base_params (dict): Original estimated parameters.
-
-    Returns:
-    - dict: Randomly adjusted parameters.
-    """
-    new_params = {}
-
-    for key, value in base_params.items():
-        if isinstance(value, int):  # Integer parameters (e.g., max_depth, n_estimators)
-            change = max(1, int(value * random.uniform(0.8, 1.2)))  # ±20%
-            new_params[key] = change
-
-        elif isinstance(value, float):  # Float parameters (e.g., learning_rate)
-            change = round(value * random.uniform(0.8, 1.2), 4)  # ±10-20%, rounded to 4 decimals
-            new_params[key] = change
-
-        else:
-            new_params[key] = value  # If it's something else, keep it unchanged
-
-    return new_params
-
-# Load parameters from JSON
-with open("data/first_xgb_param.json", "r") as f:
-    first_params = json.load(f)
-
-#this functions get parmeters to tweek and num_trials and return the best parameters and save it to json
-def fine_tune(params,num_trials):
-    best_rmse = float("inf")
-    best_params = None
-
-    for i in range(num_trials):
-        #generating parameters and initializing the model
-        new_params = get_random_params(params)
-        model = xgb.XGBRegressor(random_state=42,objective="reg:squarederror",eval_metric="rmse", **new_params)
-
-        # Train model
-        model.fit(X_train, y_train)
-
-        # Evaluate model
-        predictions = model.predict(X_test)
-        rmse = np.sqrt(mean_squared_error(y_test, predictions))
-
-        print(f"Trial {i+1}: RMSE = {rmse}, Params = {new_params}")
-
-        # Save the best parameters
-        if rmse < best_rmse:
-            best_rmse = rmse
-            best_params = new_params
-
-    # Save the best fine-tuned parameters
-    with open("data/best_xgb_params.json", "w") as f:
-        json.dump(best_params, f, indent=4)
-
-    print(f"\nBest parameters saved to data/best_xgb_params.json with RMSE = {best_rmse}")
-    return best_params
-
-#fine_tune(first_params,50)
-
-with open("data/best_xgb_params.json","r") as f:
-    best_params = json.load(f)
-
-
-# Initialize XGBoost model with default parameters
+# 📌 Initialize XGBoost model
 xgb_model = xgb.XGBRegressor(
     objective="reg:squarederror",
-    random_state=400,
-    **best_params
+    eval_metric="rmse",
+    random_state=42
 )
 
-print(best_params)
+# 📌 Perform Grid Search for Hyperparameter Tuning
+grid_search = GridSearchCV(
+    estimator=xgb_model,
+    param_grid=param_grid,
+    scoring="neg_root_mean_squared_error",
+    cv=kf,
+    n_jobs=-1,
+    verbose=2
+)
 
-# Perform Cross-Validation & Compute RMSE
-cv_rmse = -cross_val_score(xgb.XGBRegressor(objective="reg:squarederror",random_state=400,**best_params),
-                           X, y, cv=5, scoring="neg_root_mean_squared_error")
+grid_search.fit(X_train, y_train)
 
+# 📌 Extract Best Parameters & Save to JSON
+best_params = grid_search.best_params_
+with open(best_param_file, "w") as f:
+    json.dump(best_params, f, indent=4)
 
+print(f"\n✅ Best Parameters Found: {best_params}")
 
-# Print Results
-print(f"Cross-Validation RMSE Scores: {cv_rmse}")
-print(f"Mean RMSE: {cv_rmse.mean():.4f}")
-print(f"Standard Deviation RMSE: {cv_rmse.std():.4f}")
-print("21361.6215 is the rmse of the pre data")
+# 📌 Train Final Model using Best Parameters
+best_xgb_model = xgb.XGBRegressor(
+    objective="reg:squarederror",
+    random_state=42,
+    **best_params
+)
+best_xgb_model.fit(X_train, y_train)
+
+# 📌 Cross-Validation RMSE
+cv_rmse = -cross_val_score(
+    best_xgb_model, X, y, cv=kf, scoring="neg_root_mean_squared_error"
+)
+
+# 📌 Evaluate on Test Set
+y_pred = best_xgb_model.predict(X_test)
+test_rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+# 📌 Print Results
+print("\n📌 Cross-Validation RMSE Scores:", cv_rmse)
+print(f"📌 Mean RMSE: {cv_rmse.mean():.4f}")
+print(f"📌 Standard Deviation RMSE: {cv_rmse.std():.4f}")
+print(f"\n📌 Final Test RMSE: {test_rmse:.4f}")
+print("📌 Baseline RMSE (before feature engineering): 21361.6215")
