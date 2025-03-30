@@ -69,8 +69,8 @@ def train_and_tune(model, param_grid, model_name):
 
 # 📌 Train all models
 best_ridge = train_and_tune(Ridge(), param_grid_ridge, "ridge")
-best_lasso = train_and_tune(Lasso(), param_grid_lasso, "lasso")
-best_enet = train_and_tune(ElasticNet(), param_grid_enet, "elasticnet")
+#best_lasso = train_and_tune(Lasso(), param_grid_lasso, "lasso")
+#best_enet = train_and_tune(ElasticNet(), param_grid_enet, "elasticnet")
 
 
 # 📌 Evaluate Models on Test Data
@@ -83,5 +83,5 @@ def evaluate_model(model, model_name):
 
 
 evaluate_model(best_ridge, "Ridge")
-evaluate_model(best_lasso, "Lasso")
-evaluate_model(best_enet, "Elastic Net")
+#evaluate_model(best_lasso, "Lasso")
+#evaluate_model(best_enet, "Elastic Net")

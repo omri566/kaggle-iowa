@@ -51,9 +51,6 @@ def evaluate_model(model, model_name,X_test_data=None):
 
 
 #train and test linear ridge model
-ridge_model = Ridge(alpha=1)
-ridge_model.fit(X_train_scaled,y_train_log)
-evaluate_log_model(ridge_model,"Ridge")
 
 #train and test xgb model
 xgb_model = XGBRegressor(eval_metric="rmse",n_jobs=-1,random_state=420,objective="reg:squarederror",colsample_bytree=0.6, gamma=0,learning_rate=0.05,max_depth=5,n_estimators=500,reg_alpha=1, reg_lambda=10, subsample=0.6)

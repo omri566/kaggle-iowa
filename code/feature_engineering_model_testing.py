@@ -8,6 +8,9 @@ import shap
 import os
 from scipy.stats import zscore
 from sklearn.linear_model import Ridge, Lasso, ElasticNet
+from sklearn.preprocessing import StandardScaler
+
+
 
 
 # Get the absolute path of the current script
@@ -70,6 +73,80 @@ worst_43  = [
 ]
 
 
+"""def detect_and_clip_outliers(df, feature, factor=1.5):
+    # Calculate Q1, Q3, and IQR
+    Q1 = df[feature].quantile(0.25)
+    Q3 = df[feature].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - factor * IQR
+    upper_bound = Q3 + factor * IQR
+
+    # Check if there are any outliers in the feature
+    outliers_exist = ((df[feature] < lower_bound) | (df[feature] > upper_bound)).any()
+    if outliers_exist:
+        print(
+            f"Outliers detected in '{feature}'. Capping values at [{lower_bound:.2f}, {upper_bound:.2f}]. Lowest value found: {df[feature].min():.2f}")
+        df[feature] = df[feature].clip(lower=lower_bound, upper=upper_bound)
+
+    return df
+"""
+
+
+def detect_and_clip_outliers(df, target_col = "SalePrice", factor=1.5):
+    """
+    Clips outliers in numeric features using the IQR method,
+    skipping binary features and the specified target column.
+
+    Parameters:
+        df (pd.DataFrame): The input DataFrame.
+        target_col (str): The name of the target column to exclude.
+        factor (float): Multiplier for IQR to define outlier bounds.
+
+    Returns:
+        pd.DataFrame: The DataFrame with capped outliers.
+    """
+    df = df.copy()  # Avoid modifying original DataFrame
+
+    # Identify numeric features, excluding the target
+    numeric_features = df.select_dtypes(include=["float", "int"]).columns
+    numeric_features = [col for col in numeric_features if col != target_col]
+
+    # Identify binary features (e.g., one-hot encoded columns)
+    binary_features = [col for col in numeric_features if df[col].dropna().nunique() == 2]
+
+    # Filter to features that are neither binary nor the target
+    features_to_clip = [col for col in numeric_features if col not in binary_features]
+
+    for feature in features_to_clip:
+        Q1 = df[feature].quantile(0.25)
+        Q3 = df[feature].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - factor * IQR
+        upper_bound = Q3 + factor * IQR
+
+        # Avoid negative lower bounds if the feature should be non-negative
+        lower_bound = max(lower_bound, 0)
+
+        outliers_exist = ((df[feature] < lower_bound) | (df[feature] > upper_bound)).any()
+        if outliers_exist:
+            print(
+                f"Outliers detected in '{feature}'. "
+                f"Capping values at [{lower_bound:.2f}, {upper_bound:.2f}]. "
+                f"Lowest value found: {df[feature].min():.2f}, "
+                f"Highest value found: {df[feature].max():.2f}"
+            )
+            df[feature] = df[feature].clip(lower=lower_bound, upper=upper_bound)
+        else:
+            print(f"No outliers detected in '{feature}'.")
+
+    # Log skipped binary features
+    for binary_col in binary_features:
+        print(f"⏭️ Skipping binary feature '{binary_col}' (likely one-hot encoded).")
+
+    print(f"\n✅ Outlier capping complete. {len(features_to_clip)} features clipped.")
+    return df
+
+
 def feature_enggeniring_pipeline(df_input):
     df = df_input.copy()
 
@@ -108,7 +185,7 @@ def feature_enggeniring_pipeline(df_input):
     df["rooms_to_size"] = df["GrLivArea"] / df["BedroomAbvGr"]
 
     # House to basement ratio with log
-    df["house_to_bsmt_ratio"] = np.log((df["TotalBsmtSF"] / df["total_house_area"]).replace({0: 1}))
+    df["house_to_bsmt_ratio"] = (df["TotalBsmtSF"] / df["total_house_area"])
 
     # Land score with log
     df["land_score"] = np.log(
@@ -116,8 +193,16 @@ def feature_enggeniring_pipeline(df_input):
     df = df.drop(columns= worst_43)
     #used_features = ["LotShape","LandContour","BedroomAbvGr","BsmtFinType2","bsmtfin","3SsnPorch",]
     #df = df.drop(columns=used_features,errors="ignore")
+    ####try try try
+
+
+
+    df = detect_and_clip_outliers(df)
+
     #exporting the df to data folder, ensuring smooth operation after changing the pipeline
+
     df.to_csv(data_path+"/feature_engineered_data.csv")
+
 
 def model_feature_diagnostics(model, X_df, y, sort_by="mean_abs_shap", ascending=False):
     """
@@ -161,17 +246,18 @@ df = pd.read_csv(data_path+"/feature_engineered_data.csv")
 X_raw = df.drop(columns=['SalePrice'])
 y_raw = df['SalePrice']
 X_train, X_val, y_train, y_val = train_test_split(X_raw, y_raw, test_size=0.2, random_state=420)
-from xgboost import XGBRegressor
+
+
 # dummy model creation for testing
+# 1 - XGB
+
+from xgboost import XGBRegressor
 model = XGBRegressor(n_estimators=300, random_state=420, gamma=1, learning_rate=0.0545, n_jobs=-1, max_depth = 6)
 model.fit(X_train, y_train)
-y_pred = model.predict(X_val)
-##
+y_pred_xgb = model.predict(X_val)
 
-ridge_model = Ridge(alpha=1)
-ridge_model.fit(X_train,y_train)
-evaluate_log_model(ridge_model,"Ridge")
+
 
 #model_feature_diagnostics(model, X_train,y_train).to_csv("feature_diagnostics.csv")
-rmse = np.sqrt(mean_squared_error(y_val, y_pred))
+rmse = np.sqrt(mean_squared_error(y_val, y_pred_xgb))
 print(f"xbg Validation RMSE: {rmse:.2f}")
