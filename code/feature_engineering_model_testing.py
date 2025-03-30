@@ -7,6 +7,8 @@ from sklearn.metrics import mean_squared_error
 import shap
 import os
 from scipy.stats import zscore
+from sklearn.linear_model import Ridge, Lasso, ElasticNet
+
 
 # Get the absolute path of the current script
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -110,7 +112,7 @@ def feature_enggeniring_pipeline(df_input):
 
     # Land score with log
     df["land_score"] = np.log(
-        (df["LandSlope"] + (4 - df["LotShape"]) + (4 - df["LandContour"])) * df["LotArea"])
+        (df["LandSlope"] + (5 - df["LotShape"]) + (5 - df["LandContour"])) * df["LotArea"])
     df = df.drop(columns= worst_43)
     #used_features = ["LotShape","LandContour","BedroomAbvGr","BsmtFinType2","bsmtfin","3SsnPorch",]
     #df = df.drop(columns=used_features,errors="ignore")
@@ -164,7 +166,12 @@ from xgboost import XGBRegressor
 model = XGBRegressor(n_estimators=300, random_state=420, gamma=1, learning_rate=0.0545, n_jobs=-1, max_depth = 6)
 model.fit(X_train, y_train)
 y_pred = model.predict(X_val)
+##
+
+ridge_model = Ridge(alpha=1)
+ridge_model.fit(X_train,y_train)
+evaluate_log_model(ridge_model,"Ridge")
 
 #model_feature_diagnostics(model, X_train,y_train).to_csv("feature_diagnostics.csv")
 rmse = np.sqrt(mean_squared_error(y_val, y_pred))
-print(f"Validation RMSE: {rmse:.2f}")
+print(f"xbg Validation RMSE: {rmse:.2f}")

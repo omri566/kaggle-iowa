@@ -8,6 +8,7 @@ import xgboost
 import shap
 import matplotlib.pyplot as plt
 #paths
+from sklearn.linear_model import Ridge
 corr_mat_path = "data/correlation_matrix.csv"
 preprocess_train_data_path = "data/pre_processed_data.csv"
 mi_mat_path = "data/mutual_information_matrix.csv"
@@ -169,19 +170,27 @@ working_df["house_to_bsmt_ratio"] = np.log((working_df["TotalBsmtSF"]/working_df
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
-X_train, X_val, y_train, y_val = train_test_split(working_df, y, test_size=0.2, random_state=420)
+
+
+
+
+FE_data_path = "data/feature_engineered_data.csv"
+FE_data = pd.read_csv(FE_data_path)
+X_train, X_val, y_train, y_val = train_test_split(FE_data, y, test_size=0.2, random_state=420)
 from xgboost import XGBRegressor
 # dummy model creation for testing
-model = XGBRegressor(n_estimators=400, random_state=420, gamma=0.1, learning_rate=0.05, n_jobs=-1, max_depth = 6)
-model.fit(X_train, y_train)
-y_pred = model.predict(X_val)
-# checking RMSE
-rmse = np.sqrt(mean_squared_error(y_val, y_pred))
-print(f"Validation RMSE: {rmse:.2f}")
-# SHAP
-explainer = shap.Explainer(model, X_train)
-shap_values = explainer(X_train)
+ridge_model = Ridge(alpha=1.0)  # You can tune alpha later
+ridge_model.fit(X_train, y_train)
 
+# Predict
+y_pred_ridge = ridge_model.predict(X_val)
+
+# RMSE
+rmse_ridge = np.sqrt(mean_squared_error(y_val, y_pred_ridge))
+print(f"Ridge Validation RMSE: {rmse_ridge:.2f}")
+
+explainer_ridge = shap.Explainer(ridge_model, X_train)
+shap_values_ridge = explainer_ridge(X_train)
 def shap_feature_insight(feature_name, shap_values , X_df , color_feature=None, impact_thresholds=(1000, 3000)):
     """
     Generate SHAP dependence plot + guidance for a given feature.
@@ -232,7 +241,9 @@ def shap_feature_insight(feature_name, shap_values , X_df , color_feature=None, 
         print(f"🟡 Guidance: MEDIUM impact → Test further. Try combinations.")
     else:
         print(f"🔻 Guidance: LOW impact → Consider dropping or revising.")
-shap_feature_insight("land_score", shap_values, X_df = X_train)
+
+
+shap_feature_insight("land_score", shap_values_ridge, X_df = X_train)
 
 
 
