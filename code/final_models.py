@@ -13,7 +13,7 @@ from xgboost import XGBRegressor
 # 📌 Paths
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.dirname(script_dir)
-data_path = os.path.join(project_dir, "data", "feature_engineered_data.csv")
+data_path = os.path.join(project_dir, "data", "final_data.csv")
 
 # 📌 Load dataset
 df = pd.read_csv(data_path)
@@ -51,6 +51,9 @@ def evaluate_model(model, model_name,X_test_data=None):
 
 
 #train and test linear ridge model
+ridge_model = Ridge(alpha=100)
+ridge_model.fit(X_train_scaled,y_train_log)
+evaluate_log_model(ridge_model,"Ridge")
 
 #train and test xgb model
 xgb_model = XGBRegressor(eval_metric="rmse",n_jobs=-1,random_state=420,objective="reg:squarederror",colsample_bytree=0.6, gamma=0,learning_rate=0.05,max_depth=5,n_estimators=500,reg_alpha=1, reg_lambda=10, subsample=0.6)
@@ -59,3 +62,8 @@ xgb_model_scaled = XGBRegressor(eval_metric="rmse",n_jobs=-1,random_state=420,ob
 xgb_model_scaled.fit(X_train_scaled,y_train_log)
 evaluate_model(xgb_model,"XGB",X_test)
 evaluate_log_model(xgb_model_scaled,"XGB_SCALED")
+
+import shap
+import numpy as np
+import pandas as pd
+

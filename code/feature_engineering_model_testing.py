@@ -11,7 +11,27 @@ from sklearn.linear_model import Ridge, Lasso, ElasticNet
 from sklearn.preprocessing import StandardScaler
 
 
-
+"""
+weak_features = [
+    "Story_Count", "ExterQual", "PUD_Flag", "Exterior2nd_MetalSd", "Exterior2nd_HdBoard",
+    "MasVnrType_BrkFace", "Exterior2nd_VinylSd", "RoofStyle_Gable", "LotConfig_CulDSac",
+    "LotConfig_FR2", "Exterior1st_VinylSd", "BldgType_Twnhs", "Exterior1st_Plywood",
+    "Exterior2nd_Plywood", "MasVnrType_Stone", "BsmtFullBath", "LotConfig_Inside",
+    "HouseStyle_1.5Fin", "Exterior1st_HdBoard", "Exterior1st_MetalSd", "LotConfig_Corner",
+    "BldgType_Duplex", "RoofStyle_Hip", "HouseStyle_1Story", "HouseStyle_SLvl",
+    "house_to_bsmt_ratio", "GarageType_Modified_BuiltIn", "RoofStyle_Other",
+    "Exterior2nd_CmentBd", "MSZoning_C (all)", "Exterior2nd_AsbShng", "HouseStyle_2.5Unf",
+    "Exterior1st_AsbShng", "Exterior2nd_Wd Shng", "Exterior2nd_Other",
+    "GarageType_Modified_Other", "Exterior1st_Stucco", "Exterior2nd_BrkFace",
+    "Exterior1st_CemntBd", "BldgType_TwnhsE", "LotConfig_FR3", "Foundation_Other",
+    "Exterior1st_Other", "Exterior1st_WdShing", "Foundation_Slab",
+    "GarageType_Modified_2Types", "MSZoning_RH", "BldgType_2fmCon", "HouseStyle_1.5Unf",
+    "MasVnrType_BrkCmn", "Exterior2nd_Stucco", "HouseStyle_2.5Fin", "HouseStyle_SFoyer",
+    "LandSlope", "ExterCond", "GarageCond", "GarageQual", "LandContour", "BsmtCond",
+    "BsmtHalfBath", "LowQualFinSF", "Electrical", "BsmtFinType2", "BsmtFinSF2",
+    "EnclosedPorch", "3SsnPorch", "ScreenPorch", "Fence", "MiscVal", "Functional"
+]
+"""
 
 # Get the absolute path of the current script
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -181,7 +201,7 @@ def feature_enggeniring_pipeline(df_input):
     df["elec_inf"] = df["HeatingQC"] + df["CentralAir"] + df["Electrical"]
 
     # GrLivArea room ratio (overwrites previous rooms_to_size)
-    df["BedroomAbvGr"] = df["BedroomAbvGr"].replace({0: 1})
+    df["BedroomAbvGr"] = (df["BedroomAbvGr"]+1)
     df["rooms_to_size"] = df["GrLivArea"] / df["BedroomAbvGr"]
 
     # House to basement ratio with log
@@ -193,9 +213,6 @@ def feature_enggeniring_pipeline(df_input):
     df = df.drop(columns= worst_43)
     #used_features = ["LotShape","LandContour","BedroomAbvGr","BsmtFinType2","bsmtfin","3SsnPorch",]
     #df = df.drop(columns=used_features,errors="ignore")
-    ####try try try
-
-
 
     df = detect_and_clip_outliers(df)
 
