@@ -10,7 +10,7 @@ from sklearn.metrics import mean_squared_error
 # 📌 Paths
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.dirname(script_dir)
-data_path = os.path.join(project_dir, "data", "feature_engineered_data.csv")
+data_path = os.path.join(project_dir, "data", "final_data.csv")
 
 # 📌 Load dataset
 df = pd.read_csv(data_path)

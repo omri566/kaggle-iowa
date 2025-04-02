@@ -9,7 +9,7 @@ from sklearn.metrics import mean_squared_error
 # 📌 Paths
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.dirname(script_dir)
-data_path = os.path.join(project_dir, "data", "feature_engineered_data.csv")
+data_path = os.path.join(project_dir, "data", "final_data.csv")
 best_param_file = os.path.join(project_dir, "data", "best_xgb_params.json")
 
 # 📌 Load dataset
