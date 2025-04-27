@@ -248,7 +248,7 @@ ordinal_mappings = {
 }
 
 #the main function: input raw data, output data with no null and only numeric values
-def preprocess_housing_data(df):
+def preprocess_housing_data(df, is_train=True):
     """
     Preprocesses the housing dataset:
     - Drops unnecessary features
@@ -266,22 +266,44 @@ def preprocess_housing_data(df):
     one_hot_features = [f for f, details in CATEGORY_MAPPING.items() if details.get("action") == "one-hot"]
     ordinal_features = [f for f, details in CATEGORY_MAPPING.items() if details.get("action") == "ordinal"]
     binary_features = [f for f, details in CATEGORY_MAPPING.items() if details.get("action") == "binary"]
-    df = df[(np.abs(zscore(df["SalePrice"])) < 3)]  # Keep only values within 3 standard deviations - **move this the the feature engineering file
+    if is_train and "SalePrice" in df.columns:
+        df = df[(np.abs(zscore(df["SalePrice"])) < 3)]
 
     # Drop unnecessary features
-
     df = df.drop(columns=drop_features, errors='ignore')
+
+    # Fallback: fill any remaining categorical missing values with the most frequent category
+    for col in df.select_dtypes(include=['object']).columns:
+        if df[col].isna().any():
+            df[col] = df[col].fillna(df[col].mode()[0])
 
     # special Handle missing values
     df["LotFrontage"] = df.groupby("Neighborhood")["LotFrontage"].transform(lambda x: x.fillna(x.median()))
     df["GarageYrBlt"] = df["GarageYrBlt"].fillna(df["YearRemodAdd"]).fillna(df["YearBuilt"]).fillna(0)
     df["MasVnrArea"] = df["MasVnrArea"].fillna(df["MasVnrArea"].median())
 
+    # Impute basement and garage numeric features with 0 when missing (interpreted as no basement/garage)
+    for col in [
+        "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", "TotalBsmtSF",
+        "BsmtFullBath", "BsmtHalfBath", "GarageCars", "GarageArea"
+    ]:
+        if col in df.columns:
+            df[col] = df[col].fillna(0)
+
     # Fill categorical missing values
     for col, details in CATEGORY_MAPPING.items():
         if col in df.columns and df[col].isna().sum() > 0:
             if details.get("action") in ["one-hot", "ordinal"]:
-                df[col] = df[col].fillna("None")
+                if col in ordinal_mappings:
+                    # For ordinal features, fill with "None" if mapping covers it, else use the most frequent category
+                    mapping = ordinal_mappings[col]
+                    if "None" in mapping:
+                        df[col] = df[col].fillna("None")
+                    else:
+                        df[col] = df[col].fillna(df[col].mode()[0])
+                else:
+                    # For one-hot features, treat missing as a separate category
+                    df[col] = df[col].fillna("None")
     #final steps for binary features
     #merging two entries into one after checking for corr and MI
 
@@ -437,14 +459,17 @@ def preprocess_housing_data(df):
     return df #return preprocessed df without null values and only int and float column's types
 
 #exporting the file and it's description
-test1 = preprocess_housing_data(df)
+test1 = preprocess_housing_data(df, is_train=True)
 data_path = os.path.join(project_dir, "data")
 
 test1.to_csv(data_path+"/pre_processed_data.csv", index=False)
 test1.describe(include="all").transpose().to_csv(data_path +"/description_pre_processed.csv")
 
+df_test = pd.read_csv(data_path+"/test.csv")
+test2 = preprocess_housing_data(df_test, is_train=False)
 
-
+pd.set_option('display.max_rows', None)
+print(test2.isna().sum().to_string())
 
 
 """

@@ -167,7 +167,7 @@ def detect_and_clip_outliers(df, target_col = "SalePrice", factor=1.5):
     return df
 
 
-def feature_enggeniring_pipeline(df_input):
+def feature_enggeniring_pipeline(df_input, is_train=True):
     df = df_input.copy()
 
     # General Drops
@@ -210,15 +210,17 @@ def feature_enggeniring_pipeline(df_input):
     # Land score with log
     df["land_score"] = np.log(
         (df["LandSlope"] + (5 - df["LotShape"]) + (5 - df["LandContour"])) * df["LotArea"])
-    df = df.drop(columns= worst_43)
+    # Drop worst features, ignoring any that aren’t present
+    df = df.drop(columns=worst_43, errors='ignore')
     #used_features = ["LotShape","LandContour","BedroomAbvGr","BsmtFinType2","bsmtfin","3SsnPorch",]
     #df = df.drop(columns=used_features,errors="ignore")
 
-    df = detect_and_clip_outliers(df)
+    if is_train:
+        df = detect_and_clip_outliers(df)
 
     #exporting the df to data folder, ensuring smooth operation after changing the pipeline
 
-    df.to_csv(data_path+"/feature_engineered_data.csv")
+    return df
 
 
 def model_feature_diagnostics(model, X_df, y, sort_by="mean_abs_shap", ascending=False):
@@ -258,7 +260,7 @@ def model_feature_diagnostics(model, X_df, y, sort_by="mean_abs_shap", ascending
 
     return diagnostics_df
 
-feature_enggeniring_pipeline(pd.read_csv(preprocess_train_data_path))
+feature_enggeniring_pipeline(pd.read_csv(preprocess_train_data_path), is_train=True)
 df = pd.read_csv(data_path+"/feature_engineered_data.csv")
 X_raw = df.drop(columns=['SalePrice'])
 y_raw = df['SalePrice']
